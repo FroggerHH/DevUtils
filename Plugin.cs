@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
+using HarmonyLib;
 
 namespace DevUtils;
 
@@ -43,6 +44,8 @@ public class Plugin : BaseUnityPlugin
                 }
             }
         };
+
+        new VipItem("Wood");
 
         BuildInWater.RegisterOnlyInWaterPiece("piece_bench01");
 

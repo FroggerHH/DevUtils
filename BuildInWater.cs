@@ -1,4 +1,7 @@
-﻿namespace DevUtils;
+﻿using System.Collections.Generic;
+using HarmonyLib;
+
+namespace DevUtils;
 
 [HarmonyPatch]
 public static class BuildInWater

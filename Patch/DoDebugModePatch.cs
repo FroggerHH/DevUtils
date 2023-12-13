@@ -1,4 +1,6 @@
-﻿namespace DevUtils;
+﻿using HarmonyLib;
+
+namespace DevUtils.Patch;
 
 [HarmonyPatch]
 public class DoDebugModePatch

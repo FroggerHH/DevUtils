@@ -1,4 +1,7 @@
 ﻿using System;
+using HarmonyLib;
+
+namespace DevUtils;
 
 public static class TerminalCommands
 {

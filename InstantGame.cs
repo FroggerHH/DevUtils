@@ -1,3 +1,8 @@
+using System.Linq;
+using HarmonyLib;
+using JetBrains.Annotations;
+using UnityEngine;
+
 namespace DevUtils;
 
 [HarmonyPatch]
@@ -9,7 +14,7 @@ public class InstantGame
         [UsedImplicitly]
         private static void Postfix(FejdStartup __instance)
         {
-            if (useInstantGame.Value == false) return;
+            if (Plugin.useInstantGame.Value == false) return;
             var mWorlds = SaveSystem.GetWorldList();
             var name = PlayerPrefs.GetString("world");
             var world = mWorlds.FirstOrDefault(x => x.m_name == name);
