@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine.SceneManagement;
 
 namespace DevUtils.Patch;
 
@@ -12,7 +11,7 @@ public class FlatWorldPatch
     public static bool GetWorldHeight(ref float height, ref bool __result)
     {
         if (SceneManager.GetActiveScene().name != "main") return true;
-        if (Plugin.flatWorldConfig.Value)
+        if (flatWorldConfig.Value)
         {
             height = NewHeight;
             __result = true;
@@ -26,7 +25,7 @@ public class FlatWorldPatch
     public static bool Prefix(ref float __result)
     {
         if (SceneManager.GetActiveScene().name != "main") return true;
-        if (Plugin.flatWorldConfig.Value)
+        if (flatWorldConfig.Value)
         {
             __result = NewHeight;
             return false;
@@ -40,7 +39,7 @@ public class FlatWorldPatch
     public static bool WorldGeneratorGetBiomeHeight(ref float __result)
     {
         if (SceneManager.GetActiveScene().name != "main") return true;
-        if (Plugin.flatWorldConfig.Value)
+        if (flatWorldConfig.Value)
         {
             __result = NewHeight;
             return false;

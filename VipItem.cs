@@ -1,24 +1,17 @@
 ﻿#nullable enable
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
-using HarmonyLib;
-using JetBrains.Annotations;
 using Steamworks;
-using UnityEngine;
-using Object = UnityEngine.Object;
 
 [Serializable]
 public class VipItem
 {
-    public string prefabName;
     internal static List<ulong> vipPlayers = new();
+    public string prefabName;
 
-    static VipItem() => VipItemConfiguration.BindConfig();
+    static VipItem() { VipItemConfiguration.BindConfig(); }
 
     public VipItem(string prefabName)
     {
@@ -57,9 +50,11 @@ public class VipItem
         return false;
     }
 
+    private static ulong GetSteamID() { return SteamUser.GetSteamID().m_SteamID; }
+
     [HarmonyPatch] private static class Patch
     {
-        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.CanPickup)), HarmonyPrefix]
+        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.CanPickup))] [HarmonyPrefix]
         private static bool VipDrop_ItemDropCanPickup(ref bool __result, ItemDrop __instance)
         {
             if (HaveAccessToVipItem(__instance)) return true;
@@ -67,7 +62,7 @@ public class VipItem
             return false;
         }
 
-        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.GetHoverText)), HarmonyPrefix]
+        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.GetHoverText))] [HarmonyPrefix]
         private static bool VipDrop_ItemDropGetHoverText(ref string __result, ItemDrop __instance)
         {
             if (HaveAccessToVipItem(__instance)) return true;
@@ -75,21 +70,20 @@ public class VipItem
             return false;
         }
 
-        [HarmonyPatch(typeof(ZLog), nameof(ZLog.Log)), HarmonyPrefix]
+        [HarmonyPatch(typeof(ZLog), nameof(ZLog.Log))] [HarmonyPrefix]
         private static bool VipDrop_ZLogLog(object o)
         {
             if (o.ToString().Contains("Im still nto the owner")) return false;
             return true;
         }
     }
-
-    private static ulong GetSteamID() => SteamUser.GetSteamID().m_SteamID;
 }
 
 public static class Extension
 {
-    public static bool IsGood(this string str) => !string.IsNullOrEmpty(str) && !string.IsNullOrWhiteSpace(str);
-    public static string GetPrefabName(this Object go) => go ? Utils.GetPrefabName(go.name) : "NULL";
+    public static bool IsGood(this string str) { return !string.IsNullOrEmpty(str) && !string.IsNullOrWhiteSpace(str); }
+
+    public static string GetPrefabName(this Object go) { return go ? Utils.GetPrefabName(go.name) : "NULL"; }
 }
 
 internal static class VipItemConfiguration
@@ -151,8 +145,10 @@ internal static class VipItemConfiguration
         return configEntry;
     }
 
-    private static ConfigEntry<T> config<T>(string group, string name, T value, string description) =>
-        config(group, name, value, new ConfigDescription(description));
+    private static ConfigEntry<T> config<T>(string group, string name, T value, string description)
+    {
+        return config(group, name, value, new ConfigDescription(description));
+    }
 
     internal static void BindConfig()
     {
@@ -165,11 +161,9 @@ internal static class VipItemConfiguration
             var str = vipPlayersConfig.Value.Replace(" ", "");
             VipItem.vipPlayers.Clear();
             if (str.IsGood())
-            {
                 foreach (var s in str.Split(','))
                     if (ulong.TryParse(s, out var id))
                         VipItem.vipPlayers.Add(id);
-            }
         };
 
         if (SaveOnConfigSet)
