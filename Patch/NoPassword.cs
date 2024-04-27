@@ -1,7 +1,7 @@
 ﻿namespace DevUtils.Patch;
 
 [HarmonyPatch]
-public static class NoPassword
+file static class NoPassword
 {
     [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.IsPublicPasswordValid))] [HarmonyPrefix]
     private static bool IsPublicPasswordValid(ref bool __result)

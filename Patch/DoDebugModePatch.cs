@@ -5,15 +5,15 @@ public class DoDebugModePatch
 {
     [HarmonyPatch(typeof(Game), nameof(Game.SpawnPlayer))]
     [HarmonyWrapSafe] [HarmonyPostfix]
-    private static void Patch()
+    public static void Logic()
     {
-        if (!Player.m_localPlayer) return;
+        if (!m_localPlayer) return;
 
-        Player.m_localPlayer.m_godMode = true;
+        m_localPlayer.m_godMode = true;
         Terminal.m_cheat = true;
         Console.m_consoleEnabled = true;
-        Player.m_debugMode = true;
-        Player.m_localPlayer.SetNoPlacementCost(true);
+        m_debugMode = true;
+        m_localPlayer.SetNoPlacementCost(true);
         Console.instance.updateCommandList();
     }
 }

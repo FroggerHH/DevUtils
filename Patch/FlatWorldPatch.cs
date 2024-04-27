@@ -3,7 +3,7 @@
 namespace DevUtils.Patch;
 
 [HarmonyPatch]
-public class FlatWorldPatch
+file class FlatWorldPatch
 {
     private static readonly float NewHeight = 40;
 
@@ -51,9 +51,9 @@ public class FlatWorldPatch
     [HarmonyPatch(typeof(Player), nameof(Player.UpdateTeleport))] [HarmonyPrefix]
     public static void FastTeleport(Player __instance)
     {
-        if (__instance != Player.m_localPlayer) return;
-        Player.m_localPlayer.m_teleportCooldown = 999;
-        Player.m_localPlayer.m_teleportTimer = 999;
+        if (__instance != m_localPlayer) return;
+        m_localPlayer.m_teleportCooldown = 999;
+        m_localPlayer.m_teleportTimer = 999;
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.ShowTeleportAnimation))] [HarmonyPrefix]

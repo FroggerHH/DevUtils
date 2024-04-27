@@ -1,7 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Configuration;
+using DevUtils.Patch;
+using Debug = UnityEngine.Debug;
 
 namespace DevUtils;
 
@@ -13,8 +16,11 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<bool> noVegetationConfig;
     public static ConfigEntry<bool> useInstantGame;
     public static ConfigEntry<bool> noPassword;
+    public static ConfigEntry<bool> noStaminaCost;
+    public static ConfigEntry<bool> noWet;
+    public static ConfigEntry<bool> clearWeather;
+    public static ConfigEntry<bool> skipLocationsGeneration;
     public static Plugin _self;
-
 
     internal static readonly int HeightmapWidth = 64;
     internal static readonly int HeightmapScale = 1;
@@ -28,39 +34,33 @@ public class Plugin : BaseUnityPlugin
         noVegetationConfig = Config.Bind("General", "NoVegetation", false);
         useInstantGame = Config.Bind("General", "UseInstantGame", false);
         noPassword = Config.Bind("General", "No server password", false);
-
-        new CustomRecipe
-        {
-            amount = 5,
-            itemName = "FineWood", // Item to be made
-            craftingStationName = "piece_workbench",
-            minStationLevel = 2,
-            resources = new[]
-            {
-                new CustomRecipe.CustomRequirement
-                {
-                    amount = 1,
-                    resItem = "Stone"
-                },
-                new CustomRecipe.CustomRequirement
-                {
-                    amount = 2,
-                    resItem = "Mushroom"
-                }
-            }
-        };
-
-        // new VipItem("Wood");
-        // BuildInWater.RegisterOnlyInWaterPiece("piece_bench01");
+        noStaminaCost = Config.Bind("General", "NoStaminaCost", true);
+        noWet = Config.Bind("General", "NoWet", true);
+        clearWeather = Config.Bind("General", "ClearWeather", true);
+        skipLocationsGeneration = Config.Bind("General", "SkipLocationsGeneration", false);
 
         Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), ModGUID);
 
         InvokeRepeating(nameof(UpdateGroundPointInfoCall), 1, 1);
+        InvokeRepeating(nameof(FindWardsCall), 5, 20);
+        InvokeRepeating(nameof(RegisterWardsCall), 5, 5);
+    }
+
+    private void RegisterWardsCall()
+    {
+        try
+        {
+            InitWardsSettings.RegisterWards();
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     internal static async void GoThroughHeightmap()
     {
-        var comp = TerrainComp.FindTerrainCompiler(Player.m_localPlayer.transform.position);
+        var comp = TerrainComp.FindTerrainCompiler(m_localPlayer.transform.position);
         var zoneCenter =
             ZoneSystem.instance.GetZonePos(ZoneSystem.instance.GetZone(comp.m_nview.GetZDO().GetPosition()));
         var skyLine = new GameObject("SkyLine").AddComponent<LineRenderer>();
@@ -181,7 +181,32 @@ public class Plugin : BaseUnityPlugin
             // }
         }
 
+        message += $"IsInWard:        {IsInWard(worldPosFromVertex)}\n";
+
         Debug.Log(message);
+    }
+
+    private static List<ZDO> wards = new();
+    public static List<WardSettings> wardsSettingsList = new();
+    public static Stopwatch watch = new();
+
+    private void FindWardsCall() => FindWards();
+
+    private static async Task FindWards()
+    {
+        if (!ZoneSystem.instance || !m_localPlayer) return;
+        watch.Restart();
+        wards.Clear();
+        for (var i = 0; i < wardsSettingsList.Count; i++)
+        {
+            var wardsSettings = wardsSettingsList[i];
+            var zdos = await ZoneSystem.instance.GetWorldObjectsAsync(wardsSettings.prefabName);
+            wards = wards.Concat(zdos).ToList();
+        }
+
+        var totalSeconds = TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds;
+        DebugWarning($"Wards count: {wards.Count}. Took {totalSeconds} seconds");
+        watch.Restart();
     }
 
     private static bool GetPointingPos(out Vector3 worldPos)
@@ -218,4 +243,20 @@ public class Plugin : BaseUnityPlugin
 
     public static Vector2 WorldToVertex(Vector3 worldPos) =>
         WorldToVertex(worldPos, ZoneSystem.instance.GetZonePos(ZoneSystem.instance.GetZone(worldPos)));
+
+    public static bool IsInWard(Vector3 pos, float checkRadius = 0) =>
+        wards.Exists(searchWard =>
+        {
+            var wardSettings =
+                wardsSettingsList.Find(s => s.prefabName.GetStableHashCode() == searchWard.GetPrefab());
+            var isEnabled = searchWard.GetBool(ZDOVars.s_enabled, true);
+            Debug.Log($"isEnabled={isEnabled}");
+            if (!isEnabled) return false; // not enabled, skip range check
+            var wardRadius = wardSettings.dynamicRadius
+                ? wardSettings.getDynamicRadius(searchWard)
+                : wardSettings.radius;
+            Debug.Log($"wardRadius={wardRadius}");
+            var inRange = pos.DistanceXZ(searchWard.GetPosition()) <= wardRadius + checkRadius;
+            return inRange;
+        });
 }

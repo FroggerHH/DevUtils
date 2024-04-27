@@ -23,3 +23,6 @@ global using static BepInEx.BepInDependency;
 global using static Skills;
 global using ConsoleCommand = Terminal.ConsoleCommand;
 global using static UnityEngine.Mathf;
+global using JFUtils;
+global using JFUtils.WithPatch;
+global using static JFUtils.ModBase;
